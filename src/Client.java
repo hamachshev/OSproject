@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Random;
 
 public class Client {
     private static final String SERVER_ADDRESS = "localhost";
@@ -15,19 +16,18 @@ public class Client {
 
             System.out.println("Connected to the master server.");
             String jobType;
-            String jobId;
+            int jobId;
 
             while (true) {
-                System.out.print("Enter job type (A or B) and job ID (comma-separated, or 'exit' to quit): ");
-                String input = in.readLine();
+                System.out.print("Enter job type (A or B) or 'exit' to quit: ");
+                String input = in.readLine(); // we probably need to threads one to wait for user input and one to wait for response to server
                 if (input.equalsIgnoreCase("exit")) {
                     break;
                 }
 
-                String[] parts = input.split(",");
-                jobType = parts[0].trim();
-                jobId = parts[1].trim();
-                out.println(jobType + "," + jobId);
+                jobType = input.trim();
+                jobId = Math.abs(new Random().nextInt());
+                out.println(jobType + "," + jobId + ":client");
                 System.out.println("Job submitted: " + jobType + ", " + jobId);
             }
         } catch (IOException e) {
