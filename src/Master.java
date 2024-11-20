@@ -30,13 +30,10 @@ public class Master {
             slaveBSocket = serverSocket.accept();
             System.out.println("Slave-B connected.");
 
-            // Accept connections from clients
-            while (true) {
-                System.out.println("Waiting for client connection...");
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("Client connected.");
-                executor.execute(new ClientHandler(clientSocket));
-            }
+            System.out.println("Waiting for client connection...");
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Client connected.");
+            executor.execute(new ClientHandler(clientSocket));
         } catch (IOException e) {
             e.printStackTrace();
         }
