@@ -15,19 +15,26 @@ public class Client {
              BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
 
             System.out.println("Connected to the master server.");
-            String jobType;
-            int jobId;
+
 
             while (true) {
                 System.out.print("Enter job type (A or B) or 'exit' to quit: ");
-                String input = in.readLine(); // we probably need to threads one to wait for user input and one to wait for response to server
+                String input = in.readLine();
                 if (input.equalsIgnoreCase("exit")) {
                     break;
                 }
 
-                jobType = input.trim();
-                jobId = Math.abs(new Random().nextInt());
-                out.println(jobType + "," + jobId + ":client");
+                final String jobType = input.trim();
+                final int jobId = Math.abs(new Random().nextInt());
+                Thread t1 = new Thread(() -> {
+                    out.println(jobType + "," + jobId + ":client"); // printwriter is thread safe see https://arc.net/l/quote/acsdmdvy
+                    try {
+                        System.out.println("Recived response! " + in.readLine()); // buffered reader is thread safe https://arc.net/l/quote/rdujavkp
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
                 System.out.println("Job submitted: " + jobType + ", " + jobId);
             }
         } catch (IOException e) {
