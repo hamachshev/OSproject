@@ -232,7 +232,7 @@ public class Master {
             // Send the job to the selected slave and save the socket in the active sockets
                 if (oos != null) {
                     try {
-                        oos.writeObject(job);  // Send the job to the slave TODO this does not work must figure out serializartion
+                        oos.writeObject(job);  // Send the job to the slave
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -301,7 +301,7 @@ public class Master {
                         continue;
                     }
 
-                    System.out.println(job); // must send back the JOB number && type somehow TODO SERIALIZATION
+                    System.out.println(job);
                     Socket socket = null;
                     if(job.getType() == 'A'){
                         socket = aActiveJobsQueue.remove(job);
@@ -324,7 +324,7 @@ public class Master {
                             aJobsQueue.remove(nextJob);
 
                             if (oos != null) {
-                                oos.writeObject(job);  // Send the job to the slave TODO this does not work must figure out serializartion
+                                oos.writeObject(job);  // Send the job to the slave
                                 activeASockets.add(slaveSocket);
                                 aActiveJobsQueue.put(nextJob, socketOut);
                                 System.out.println("Assigned job to Slave " + job.getType() + ":\t" + job.getName());
@@ -341,7 +341,7 @@ public class Master {
                             bJobsQueue.remove(nextJob);
 
                             if (oos != null) {
-                                oos.writeObject(job);  // Send the job to the slave TODO this does not work must figure out serializartion
+                                oos.writeObject(job);  // Send the job to the slave
                                 activeBSockets.add(slaveSocket);
                                 bActiveJobsQueue.put(nextJob, socketOut);
                                 System.out.println("Assigned job to Slave " + job.getType() + ":\t" + job.getName());
