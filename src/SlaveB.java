@@ -12,16 +12,14 @@ public class SlaveB extends Slave {
     }
 
     @Override
-    public String processJob(String job) {
-        try {
-            System.out.println("SlaveB processing job: " + job);
-            if (job.endsWith("B"))
-                Thread.sleep(2000);
-            else
-                Thread.sleep(10000);            return "Slave B completed job: " + job;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return "Error in processing job";
-        }
+    public Job processJob(Job job) throws InterruptedException {
+
+        System.out.println("SlaveB processing job: " + job);
+        if (job.getType() == 'B')
+            Thread.sleep(2000);
+        else
+            Thread.sleep(10000);
+        return job;
     }
+
 }

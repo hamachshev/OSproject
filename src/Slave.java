@@ -13,7 +13,7 @@ public abstract class Slave {
     }
 
     // Abstract method to be implemented by subclasses to process jobs
-    public abstract String processJob(String job);
+    public abstract Job processJob(Job job) throws InterruptedException;
 
     // Connect to the master server and listen for jobs
     public void runSlave() {
@@ -21,21 +21,39 @@ public abstract class Slave {
             System.out.println("Connected to master server as " + slaveType + " slave on port " + masterPort);
 
             // Set up input/output streams for communication with the Master
-            BufferedReader in = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
-            PrintWriter out = new PrintWriter(masterSocket.getOutputStream(), true);
+            ObjectInputStream ois = new ObjectInputStream(masterSocket.getInputStream());
+//            BufferedReader in = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+            ObjectOutputStream oos = new ObjectOutputStream(masterSocket.getOutputStream());
 
             // Listen for jobs from the Master
-            String jobAssigned;
-            while ((jobAssigned = in.readLine()) != null) {
-                System.out.println("Received job:\t" + jobAssigned);
-                String result = processJob(jobAssigned);
+
+            while (true) {
+                Object object;
+
+                try {
+                     object = ois.readObject();
+                } catch (EOFException e) { // no object yet
+                    continue;
+                }
+                Job job;
+                if (object instanceof Job) {
+                    job = (Job) object;
+                } else {
+                    continue;
+                }
+                System.out.println("Received job:\t" + job.getName());
+                Job result = processJob(job);
 
                 // Send the result back to the Master
-                out.println(result);
+                oos.writeObject(result);
                 System.out.println("Processed job, result: " + result);
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 }

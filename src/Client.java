@@ -34,12 +34,13 @@ public class Client {
                 jobExecutor.submit(() -> {
                     // Send job request to the master server
                     out.println("ID: " + jobId + "; Type: " + jobType.toUpperCase());
+                    System.out.println("Job submitted: " + jobType + ", Job ID: " + jobId);
 
                     // Wait for response from the server (assigned job to slave)
                     try {
                         String response = in.readLine();
                         if (response != null) {
-                            System.out.println("Received response from server:\t" + response);
+                            System.out.println("\nReceived response from server:\t" + response);
                         } else {
                             System.out.println("No response from server.");
                         }
@@ -47,7 +48,7 @@ public class Client {
                         e.printStackTrace();
                     }
 
-                    System.out.println("Job submitted: " + jobType + ", Job ID: " + jobId);
+
                 });
             }
 
