@@ -1,21 +1,18 @@
 import java.io.*;
-import java.net.Socket;  // Import the Socket class
+import java.net.Socket;
 
 public abstract class Slave {
     private static final String MASTER_HOST = "localhost";
     private final int masterPort;  // Port number for communication with the master
     private final String slaveType;  // Type of the slave (A or B)
 
-    // Constructor to initialize slave with a specific port and type
     public Slave(String slaveType, int masterPort) {
         this.slaveType = slaveType;
         this.masterPort = masterPort;
     }
 
-    // Abstract method to be implemented by subclasses to process jobs
     public abstract Job processJob(Job job) throws InterruptedException;
 
-    // Connect to the master server and listen for jobs
     public void runSlave() {
         try (Socket masterSocket = new Socket(MASTER_HOST, masterPort)) {
             System.out.println("Connected to master server as " + slaveType + " slave on port " + masterPort);
