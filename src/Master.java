@@ -1,10 +1,7 @@
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class Master {
     private static final int PORT_SLAVE_A = 12345;
@@ -31,7 +28,6 @@ public class Master {
                     ", Client port: " + PORT_CLIENT);
 
             new Thread(() -> listenForSlaves('A')).start();
-
             new Thread(() -> listenForSlaves('B')).start();
 
             new Thread(Master::listenForClients).start();
@@ -63,9 +59,9 @@ public class Master {
 
     private static void listenForSlaves(char type) {
 
-        try (ServerSocket slaveServerSocket = new ServerSocket(type == 'A' ? PORT_SLAVE_A : PORT_SLAVE_B)) {
+        try(ServerSocket slaveServerSocket = new ServerSocket(type == 'A' ? PORT_SLAVE_A : PORT_SLAVE_B)) {
             while (true) {
-                Socket slaveSocket = slaveServerSocket.accept();
+                Socket slaveSocket = slaveServerSocket.accept(); // Wait for slave to connect
                 System.out.println("SLAVE " + type + " CONNECTED");
 
                 if (type == 'A') {
@@ -76,17 +72,19 @@ public class Master {
                     slaveBWriters.put(slaveSocket, new ObjectOutputStream(slaveSocket.getOutputStream()));
                 }
 
+                // listen for finished jobs
                 slaveExecutor.submit(new SlaveHandler(slaveSocket, type));
             }
 
         } catch (IOException e) {
             System.err.println("Error accepting slave " + type + " connection: " + e.getMessage());
         }
+
     }
 
     private static void listenForClients() {
         while (true) {
-            try (ServerSocket clientServerSocket = new ServerSocket(PORT_CLIENT)) {
+            try( ServerSocket clientServerSocket = new ServerSocket(PORT_CLIENT)) {
 
                 Socket clientSocket = clientServerSocket.accept();
                 System.out.println("CLIENT CONNECTED");
@@ -107,9 +105,9 @@ public class Master {
             while ((clientRequest = in.readLine()) != null) {
                 System.out.println("Received job request from client:\t" + clientRequest);
 
-                if (clientRequest.endsWith("A")) {
+                if (clientRequest.endsWith("A")){
                     assignJobToBestSlave(clientSocket, new Job(clientRequest, 'A', 0));
-                } else if (clientRequest.endsWith("B")) {
+                } else if (clientRequest.endsWith("B")){
                     assignJobToBestSlave(clientSocket, new Job(clientRequest, 'B', 0));
                 }
             }
@@ -119,10 +117,11 @@ public class Master {
         }
     }
 
+
     private static void assignJobToBestSlave(Socket socket, Job job) {
 
-        if (job.getType() == 'A') {
-            if (calculateWaitTime(aActiveJobsQueue, aJobsQueue, slaveASockets) + 2 < calculateWaitTime(bActiveJobsQueue, bJobsQueue, slaveBSockets) + 10) {
+        if (job.getType() == 'A'){
+            if (calculateWaitTime(aActiveJobsQueue, aJobsQueue, slaveASockets) + 2 < calculateWaitTime(bActiveJobsQueue, bJobsQueue, slaveBSockets) + 10){
                 job.setTime(2);
                 queueA(socket, job);
             } else {
@@ -130,7 +129,7 @@ public class Master {
                 queueB(socket, job);
             }
         } else if (job.getType() == 'B') {
-            if (calculateWaitTime(bActiveJobsQueue, bJobsQueue, slaveBSockets) + 2 < calculateWaitTime(aActiveJobsQueue, aJobsQueue, slaveASockets) + 10) {
+            if (calculateWaitTime(bActiveJobsQueue, bJobsQueue, slaveBSockets) + 2 < calculateWaitTime(aActiveJobsQueue, aJobsQueue, slaveASockets) + 10){
                 job.setTime(2);
                 queueB(socket, job);
             } else {
@@ -141,7 +140,7 @@ public class Master {
 
     }
 
-    private static int calculateWaitTime(Map<Job, Socket> activeJobs, Map<Job, Socket> jobsQueue, Set<Socket> sockets) {
+    private static int calculateWaitTime(Map<Job, Socket> activeJobs, Map<Job,Socket> jobsQueue, Set<Socket> sockets) {
         ArrayList<Job> tempActiveJobQueue = new ArrayList<>(activeJobs.keySet());
         ArrayList<Job> tempJobQueue = new ArrayList<>(jobsQueue.keySet());
 
@@ -164,7 +163,8 @@ public class Master {
         }
 
         // now add in this job
-        while (tempActiveJobQueue.size() > sockets.size()) {
+
+        while (tempActiveJobQueue.size() > sockets.size()){
             time += 2;
             for (Job job : tempActiveJobQueue) {
                 if (job.getTime() <= 2) {
@@ -180,15 +180,17 @@ public class Master {
 
 
     private static void queueA(Socket socket, Job job) {
-        if (aActiveJobsQueue.size() < slaveASockets.size()) { // aka available socket
+        if(aActiveJobsQueue.size() < slaveASockets.size()){ // aka available socket
             sendToA(job, socket);
         } else {
             aJobsQueue.put(job, socket);
         }
     }
 
+
+
     private static void queueB(Socket socket, Job job) {
-        if (bActiveJobsQueue.size() < slaveBSockets.size()) {
+        if(bActiveJobsQueue.size() < slaveBSockets.size()){
             sendToB(job, socket);
         } else {
             bJobsQueue.put(job, socket);
@@ -197,46 +199,59 @@ public class Master {
 
     private static void sendToA(Job job, Socket socketOut) {
         if (!slaveASockets.isEmpty() || !slaveBSockets.isEmpty()) {
-            Socket socket = null;
-            for (Socket ASocket : slaveASockets) {
-                if (!activeASockets.contains(ASocket)) {
-                    socket = ASocket;
+            Socket socket = null; // shouild be ok at this point
+            for (Socket ASocket : slaveASockets){
+                if(!activeASockets.contains(ASocket)){
+                    socket =  ASocket;
                     break;
                 }
             }
-            try (ObjectOutputStream oos = slaveAWriters.get(socket)) {
-                if (oos != null) {
-                    oos.writeObject(job);
-                    activeASockets.add(socket);
-                    aActiveJobsQueue.put(job, socketOut);
-                    System.out.println("Assigned job to Slave " + job.getType() + ":\t" + job.getName());
+            ObjectOutputStream oos;
+
+
+            oos = slaveAWriters.get(socket);
+            // Send the job to the selected slave and save the socket in the active sockets
+            if (oos != null) {
+                try {
+                    oos.writeObject(job);  // Send the job to the slave
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                activeASockets.add(socket);
+                aActiveJobsQueue.put(job, socketOut);
+                System.out.println("Assigned job to Slave " + job.getType() + ":\t" + job.getName());
             }
+
         } else {
             System.out.println("Cannot assign job: No slaves connected.");
         }
     }
-
     private static void sendToB(Job job, Socket socketOut) {
         if (!slaveASockets.isEmpty() || !slaveBSockets.isEmpty()) {
-            Socket socket = null;
-            for (Socket BSocket : slaveBSockets) {
-                if (!activeASockets.contains(BSocket)) {
-                    socket = BSocket;
+            Socket socket = null; // should be ok at this point
+            for (Socket BSocket : slaveBSockets){
+                if(!activeASockets.contains(BSocket)){
+                    socket =  BSocket;
                 }
             }
-            try (ObjectOutputStream oos = slaveBWriters.get(socket)) {
-                if (oos != null) {
-                    oos.writeObject(job);
-                    activeBSockets.add(socket);
-                    bActiveJobsQueue.put(job, socketOut);
-                    System.out.println("Assigned job to Slave " + job.getType() + ":\t" + job.getName());
+
+
+            ObjectOutputStream oos;
+
+
+            oos = slaveBWriters.get(socket);
+            // Send the job to the selected slave and save socket in active sockets
+            if (oos != null) {
+                try {
+                    oos.writeObject(job);  // Send the job to the slave
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                activeBSockets.add(socket);
+                bActiveJobsQueue.put(job, socketOut);
+                System.out.println("Assigned job to Slave " + job.getType() + ":\t" + job.getName());
             }
+
         } else {
             System.out.println("Cannot assign job: No slaves connected.");
         }
@@ -253,9 +268,11 @@ public class Master {
 
         @Override
         public void run() {
-            try (ObjectInputStream ois = new ObjectInputStream(slaveSocket.getInputStream())) {
+            try ( ObjectInputStream ois = new ObjectInputStream(slaveSocket.getInputStream())) {
 
+                // Listen for results from slave
                 while (true) {
+                    // Log the result received from the slave
                     Object object = ois.readObject();
                     Job job;
                     if (object instanceof Job) {
@@ -266,7 +283,7 @@ public class Master {
 
                     System.out.println(job);
                     Socket socket;
-                    if (job.getType() == 'A') {
+                    if(job.getType() == 'A'){
                         socket = aActiveJobsQueue.remove(job);
                     } else {
                         socket = bActiveJobsQueue.remove(job);
@@ -277,9 +294,9 @@ public class Master {
                     pw.println("finished " + job);
 
                     //get next job if any
-                    if (slaveASockets.contains(slaveSocket) && activeASockets.contains(slaveSocket)) {
+                    if (slaveASockets.contains(slaveSocket) && activeASockets.contains(slaveSocket)){
                         activeASockets.remove(slaveSocket);
-                        if (!aJobsQueue.isEmpty()) {
+                        if (!aJobsQueue.isEmpty()){
                             ObjectOutputStream oos;
                             oos = slaveAWriters.get(slaveSocket);
                             Job nextJob = aJobsQueue.entrySet().iterator().next().getKey();
@@ -287,16 +304,16 @@ public class Master {
                             aJobsQueue.remove(nextJob);
 
                             if (oos != null) {
-                                oos.writeObject(job);
+                                oos.writeObject(job);  // Send the job to the slave
                                 activeASockets.add(slaveSocket);
                                 aActiveJobsQueue.put(nextJob, socketOut);
                                 System.out.println("Assigned job to Slave " + job.getType() + ":\t" + job.getName());
                             }
 
                         }
-                    } else if (slaveBSockets.contains(slaveSocket) && activeBSockets.contains(slaveSocket)) {
+                    } else if (slaveBSockets.contains(slaveSocket) && activeBSockets.contains(slaveSocket)){
                         activeBSockets.remove(slaveSocket);
-                        if (!bJobsQueue.isEmpty()) {
+                        if (!bJobsQueue.isEmpty()){
                             ObjectOutputStream oos;
                             oos = slaveBWriters.get(slaveSocket);
                             Job nextJob = bJobsQueue.entrySet().iterator().next().getKey();
@@ -304,7 +321,7 @@ public class Master {
                             bJobsQueue.remove(nextJob);
 
                             if (oos != null) {
-                                oos.writeObject(job);
+                                oos.writeObject(job);  // Send the job to the slave
                                 activeBSockets.add(slaveSocket);
                                 bActiveJobsQueue.put(nextJob, socketOut);
                                 System.out.println("Assigned job to Slave " + job.getType() + ":\t" + job.getName());
