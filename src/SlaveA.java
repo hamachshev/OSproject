@@ -12,11 +12,11 @@ public class SlaveA extends Slave {
     @Override
     public Job processJob(Job job) throws InterruptedException {
 
-            System.out.println("SlaveA processing job: " + job);
-            if (job.getType() == 'A')
-                Thread.sleep(2000);
-            else
-                Thread.sleep(10000);
-            return job;
+        System.out.println("SlaveA processing job: " + job);
+        if (job.getType() == 'A')
+            Thread.sleep(2000);
+        else
+            Thread.sleep(10000);
+        return job;
     }
 }

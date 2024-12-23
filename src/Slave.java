@@ -24,7 +24,7 @@ public abstract class Slave {
 
                 Object object;
                 try {
-                     object = ois.readObject();
+                    object = ois.readObject();
                 } catch (EOFException e) { // no object yet
                     continue;
                 }

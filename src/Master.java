@@ -1,7 +1,10 @@
 import java.io.*;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Master {
     private static final int PORT_SLAVE_A = 12345;
@@ -183,7 +186,6 @@ public class Master {
             aJobsQueue.put(job, socket);
         }
     }
-
 
     private static void queueB(Socket socket, Job job) {
         if (bActiveJobsQueue.size() < slaveBSockets.size()) {
