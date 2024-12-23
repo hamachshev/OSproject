@@ -3,8 +3,8 @@ import java.net.Socket;
 
 public abstract class Slave {
     private static final String MASTER_HOST = "localhost";
-    private final int masterPort;  // Port number for communication with the master
-    private final String slaveType;  // Type of the slave (A or B)
+    private final int masterPort;
+    private final String slaveType;
 
     public Slave(String slaveType, int masterPort) {
         this.slaveType = slaveType;
