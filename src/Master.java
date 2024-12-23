@@ -103,7 +103,7 @@ public class Master {
 
             String clientRequest;
             while ((clientRequest = in.readLine()) != null) {
-                System.out.println("Received job request from client:\t" + clientRequest);
+                System.out.println("Received job request from Client:\t" + clientRequest);
 
                 if (clientRequest.endsWith("A")){
                     assignJobToBestSlave(clientSocket, new Job(clientRequest, 'A', 0));
@@ -199,15 +199,15 @@ public class Master {
 
     private static void sendToA(Job job, Socket socketOut) {
         if (!slaveASockets.isEmpty() || !slaveBSockets.isEmpty()) {
-            Socket socket = null; // shouild be ok at this point
+            Socket socket = null; // should be ok at this point
             for (Socket ASocket : slaveASockets){
                 if(!activeASockets.contains(ASocket)){
                     socket =  ASocket;
                     break;
                 }
             }
-            ObjectOutputStream oos;
 
+            ObjectOutputStream oos;
 
             oos = slaveAWriters.get(socket);
             // Send the job to the selected slave and save the socket in the active sockets
@@ -235,9 +235,7 @@ public class Master {
                 }
             }
 
-
             ObjectOutputStream oos;
-
 
             oos = slaveBWriters.get(socket);
             // Send the job to the selected slave and save socket in active sockets
@@ -281,7 +279,8 @@ public class Master {
                         continue;
                     }
 
-                    System.out.println(job);
+                    System.out.println("Completed job: " + job);
+
                     Socket socket;
                     if(job.getType() == 'A'){
                         socket = aActiveJobsQueue.remove(job);
@@ -291,7 +290,7 @@ public class Master {
 
                     //send response to the client socket
                     PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
-                    pw.println("finished " + job);
+                    pw.println("Completed job: " + job);
 
                     //get next job if any
                     if (slaveASockets.contains(slaveSocket) && activeASockets.contains(slaveSocket)){
