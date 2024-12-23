@@ -43,9 +43,7 @@ public class Job implements Serializable {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Job) {
-            if (((Job) obj).getName().equals(name) && ((Job) obj).getType() == type) {
-                return true;
-            }
+            return ((Job) obj).getName().equals(name) && ((Job) obj).getType() == type;
         }
         return false;
     }
