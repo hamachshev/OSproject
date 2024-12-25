@@ -41,20 +41,30 @@ public class Master {
 
             // close sockets
             try {
-                for (Socket socket: slaveASockets){
-                    socket.close();
+                synchronized (slaveASockets) {
+                    for (Socket socket : slaveASockets) {
+                        socket.close();
+                    }
                 }
-                for (Socket socket: slaveBSockets){
-                    socket.close();
+                synchronized (slaveBSockets) {
+                    for (Socket socket: slaveBSockets){
+                        socket.close();
+                    }
                 }
-                for (ObjectOutputStream objectOutputStream : slaveAWriters.values()){
-                    objectOutputStream.close();
+                synchronized (slaveAWriters) {
+                    for (ObjectOutputStream objectOutputStream : slaveAWriters.values()) {
+                        objectOutputStream.close();
+                    }
                 }
-                for (ObjectOutputStream objectOutputStream : slaveBWriters.values()){
-                    objectOutputStream.close();
+                synchronized (slaveBWriters) {
+                    for (ObjectOutputStream objectOutputStream : slaveBWriters.values()) {
+                        objectOutputStream.close();
+                    }
                 }
-                for (Socket client : clients) {
-                    client.close();
+                synchronized (clients) {
+                    for (Socket client : clients) {
+                        client.close();
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -68,12 +78,16 @@ public class Master {
         // so this approach will cause some of the times to be off.
         try {
             Thread.sleep(2000);
-            for (Job job : aJobsQueue.keySet()) {
-                job.setTime(job.getTime() - 2);
+            synchronized (aJobsQueue) {
+                for (Job job : aJobsQueue.keySet()) {
+                    job.setTime(job.getTime() - 2);
+                }
             }
 
-            for (Job job : bJobsQueue.keySet()) {
-                job.setTime(job.getTime() - 2);
+            synchronized (bJobsQueue) {
+                for (Job job : bJobsQueue.keySet()) {
+                    job.setTime(job.getTime() - 2);
+                }
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -173,7 +187,7 @@ public class Master {
         // go 2 seconds into the future
         while (!tempJobQueue.isEmpty()) { // add in all the waiting jobs
             time += 2;
-            Iterator<Job> iterator = tempActiveJobQueue.iterator();
+            Iterator<Job> iterator = tempActiveJobQueue.iterator(); // need to do this to do .remove() on iterator later on; cannot concurrently modify while iteration without
             while (iterator.hasNext()) {
                 Job job = iterator.next();
                 if (job.getTime() <= 2) {
@@ -226,10 +240,12 @@ public class Master {
 
         if (!slaveSockets.isEmpty()) {
             Socket socket = null; // should be ok at this point
-            for (Socket ASocket : slaveSockets) {
-                if (!activeSockets.contains(ASocket)) {
-                    socket = ASocket;
-                    break;
+            synchronized (slaveSockets) {
+                for (Socket ASocket : slaveSockets) {
+                    if (!activeSockets.contains(ASocket)) {
+                        socket = ASocket;
+                        break;
+                    }
                 }
             }
 
