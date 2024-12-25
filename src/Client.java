@@ -26,7 +26,10 @@ public class Client {
                 System.out.print("Enter job type (A or B): ");
                 String input = userIn.readLine();
 
-                final String jobType = input.trim();
+                final String jobType = input.trim().toUpperCase();
+                if (!(jobType.equals("A") || jobType.equals("B"))) {
+                    continue;
+                }
                 final int jobId = Math.abs(new Random().nextInt());
 
                 jobExecutor.submit(() -> {

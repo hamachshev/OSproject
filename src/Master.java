@@ -15,7 +15,7 @@ public class Master {
     private static final Map<Job, Socket> bJobsQueue = Collections.synchronizedMap(new LinkedHashMap<>());
     private static final Map<Job, Socket> aActiveJobsQueue = Collections.synchronizedMap(new LinkedHashMap<>());
     private static final Map<Job, Socket> bActiveJobsQueue = Collections.synchronizedMap(new LinkedHashMap<>());
-
+    private static final Set<Socket> clients = Collections.synchronizedSet(new HashSet<>());
     private static final Map<Socket, ObjectOutputStream> slaveAWriters = new ConcurrentHashMap<>();
     private static final Map<Socket, ObjectOutputStream> slaveBWriters = new ConcurrentHashMap<>();
     private static final ExecutorService slaveExecutor = Executors.newCachedThreadPool();
@@ -36,6 +36,29 @@ public class Master {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        finally {
+
+            // close sockets
+            try {
+                for (Socket socket: slaveASockets){
+                    socket.close();
+                }
+                for (Socket socket: slaveBSockets){
+                    socket.close();
+                }
+                for (ObjectOutputStream objectOutputStream : slaveAWriters.values()){
+                    objectOutputStream.close();
+                }
+                for (ObjectOutputStream objectOutputStream : slaveBWriters.values()){
+                    objectOutputStream.close();
+                }
+                for (Socket client : clients){
+                    client.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -59,7 +82,8 @@ public class Master {
 
     private static void listenForSlaves(char type) {
 
-        try (ServerSocket slaveServerSocket = new ServerSocket(type == 'A' ? PORT_SLAVE_A : PORT_SLAVE_B)) {
+        try  {
+            ServerSocket slaveServerSocket = new ServerSocket(type == 'A' ? PORT_SLAVE_A : PORT_SLAVE_B);
             while (true) {
                 Socket slaveSocket = slaveServerSocket.accept(); // Wait for slave to connect
                 System.out.println("SLAVE " + type + " CONNECTED");
@@ -84,9 +108,10 @@ public class Master {
 
     private static void listenForClients() {
         while (true) {
-            try (ServerSocket clientServerSocket = new ServerSocket(PORT_CLIENT)) {
+            try(ServerSocket clientServerSocket = new ServerSocket(PORT_CLIENT))  {
 
                 Socket clientSocket = clientServerSocket.accept();
+                clients.add(clientSocket);
                 System.out.println("CLIENT CONNECTED");
 
                 clientExecutor.submit(() -> handleClientConnection(clientSocket));
@@ -149,9 +174,11 @@ public class Master {
         // go 2 seconds into the future
         while (!tempJobQueue.isEmpty()) { // add in all the waiting jobs
             time += 2;
-            for (Job job : tempActiveJobQueue) {
+            Iterator<Job> iterator = tempActiveJobQueue.iterator();
+            while (iterator.hasNext()) {
+                Job job = iterator.next();
                 if (job.getTime() <= 2) {
-                    tempActiveJobQueue.remove(job);
+                    iterator.remove();
                 } else {
                     job.setTime(job.getTime() - 2);
                 }
@@ -162,13 +189,15 @@ public class Master {
             }
         }
 
-        // now add in this job
+        // now go thru all the active jobs
 
-        while (tempActiveJobQueue.size() > sockets.size()) {
+        while (!tempActiveJobQueue.isEmpty()) {
             time += 2;
-            for (Job job : tempActiveJobQueue) {
+            Iterator<Job> iterator = tempActiveJobQueue.iterator();
+            while (iterator.hasNext()) {
+                Job job = iterator.next();
                 if (job.getTime() <= 2) {
-                    break;
+                    iterator.remove();
                 } else {
                     job.setTime(job.getTime() - 2);
                 }
@@ -290,6 +319,7 @@ public class Master {
 
                     //send response to the client socket
                     PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
+
                     pw.println("Completed job: " + job);
 
                     //get next job if any;
