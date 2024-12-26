@@ -202,15 +202,14 @@ public class Master {
             }
         }
 
-        // now go thru all the active jobs
+        // now go thru all the active jobs to find open spot
 
-        while (!tempActiveJobQueue.isEmpty()) {
+        outer:
+        while (!(tempActiveJobQueue.size() < sockets.size())) {
             time += 2;
-            Iterator<Job> iterator = tempActiveJobQueue.iterator();
-            while (iterator.hasNext()) {
-                Job job = iterator.next();
+            for (Job job : tempActiveJobQueue) {
                 if (job.getTime() <= 2) {
-                    iterator.remove();
+                    break outer; //open spot for this one
                 } else {
                     job.setTime(job.getTime() - 2);
                 }
@@ -302,6 +301,7 @@ public class Master {
                         socket = bActiveJobsQueue.remove(job);
                     }
 
+                    System.out.println("Sending job: " + job + " to the client");
                     //send response to the client socket
                     PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
 

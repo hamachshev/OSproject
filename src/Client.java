@@ -31,11 +31,11 @@ public class Client {
                     continue;
                 }
                 final int jobId = Math.abs(new Random().nextInt());
-
+                System.out.println("\nYou submitted: " + jobType + ", Job ID: " + jobId);
                 jobExecutor.submit(() -> {
 
                     out.println("ID: " + jobId + "; Type: " + jobType.toUpperCase());
-                    System.out.print("\nJob submitted: " + jobType + ", Job ID: " + jobId + "\nEnter job type (A or B): ");
+                    System.out.print("\nJob submitted to master: " + jobType + ", Job ID: " + jobId + "\nEnter job type (A or B): ");
 
                     try {
                         String response = in.readLine();

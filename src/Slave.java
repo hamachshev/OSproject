@@ -39,8 +39,10 @@ public abstract class Slave {
                 System.out.println("Received job:\t" + job.getName());
 
                 Job result = processJob(job);
-                oos.writeObject(result);
                 System.out.println("Processed job, result: " + result);
+                System.out.println("Sending job: " + result + " to master");
+                oos.writeObject(result);
+
             }
         } catch (IOException e) {
             e.printStackTrace();
