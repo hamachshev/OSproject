@@ -260,7 +260,7 @@ public class Master {
                 }
                 activeSockets.add(socket);
                 activeJobsQueue.put(job, socketOut);
-                System.out.println("Assigned job to Slave " + job.getType() + ":\t" + job.getName());
+                System.out.println("Assigned job to Slave " + type + ":\t" + job.getName());
             }
 
         } else {
